@@ -4,10 +4,9 @@
 # https://aka.ms/yaml
 trigger:
 - main
-pool:
-  name: Azure Pipelines
-  vmImage: ubuntu-latest
 
+pool:
+  name: Default
 
 steps:
 
