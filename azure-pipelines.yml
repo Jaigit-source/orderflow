@@ -1,13 +1,12 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
 - main
 
 pool:
   name: Default
+
+variables:
+  ACR_NAME: orderflowacr123
+  IMAGE_NAME: orderflow
 
 steps:
 
@@ -17,5 +16,22 @@ steps:
   displayName: 'Install Dependencies'
 
 - script: |
-    docker build -t orderflow:$(Build.BuildId) .
+    docker build -t $(IMAGE_NAME):$(Build.BuildId) .
   displayName: 'Build Docker Image'
+
+- script: |
+    az acr login --name $(ACR_NAME)
+  displayName: 'Login to ACR'
+
+- script: |
+    docker tag $(IMAGE_NAME):$(Build.BuildId) $(ACR_NAME).azurecr.io/$(IMAGE_NAME):$(Build.BuildId)
+  displayName: 'Tag Docker Image'
+
+- script: |
+    docker push $(ACR_NAME).azurecr.io/$(IMAGE_NAME):$(Build.BuildId)
+  displayName: 'Push Image to ACR'
+
+- script: |
+    kubectl set image deployment/orderflow orderflow=$(ACR_NAME).azurecr.io/$(IMAGE_NAME):$(Build.BuildId) -n orderflow
+    kubectl rollout status deployment/orderflow -n orderflow
+  displayName: 'Deploy to AKS'
